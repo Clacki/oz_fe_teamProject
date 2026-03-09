@@ -17,7 +17,7 @@ jobs:
       - name: Checkout Personal Repo
         uses: actions/checkout@v4
         with:
-          ref: main  # 본인 레포의 기본 브랜치 (master면 수정 필요)
+          ref: dev  # 본인 레포의 기본 브랜치 (master면 수정 필요)
           fetch-depth: 0
 
       - name: Configure Git
