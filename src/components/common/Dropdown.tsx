@@ -19,12 +19,12 @@ const OPTIONS = [
   '기타(직접입력)',
 ]
 
-function TestDropdown() {
+function Dropdown() {
   const [isOpen, setIsOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState('')
   const [text, setText] = useState('')
 
-  const handleSelect = (item: any) => {
+  const handleSelect = (item: string) => {
     setSelectedItem(item)
     setIsOpen(false)
   }
@@ -45,6 +45,7 @@ function TestDropdown() {
               />
             </div>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent>
             <DropdownMenuGroup>
               {OPTIONS.map((item) => (
@@ -52,19 +53,21 @@ function TestDropdown() {
                   key={item}
                   onClick={() => handleSelect(item)}
                   className={cn(
-                    'cursor-pointer',
-                    selectedItem === item && 'font-semibold text-[#6201E0]'
+                    'text-gray-primary cursor-pointer',
+                    selectedItem === item &&
+                      'text-primary-default font-semibold'
                   )}
                 >
                   {item}
                   {selectedItem === item && (
-                    <CheckIcon className="h-4 w-4 shrink-0" />
+                    <CheckIcon className="text-primary-default h-4 w-4 shrink-0" />
                   )}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
+
         {isOtherSelected && (
           <div className="mt-1 w-72">
             <textarea
@@ -72,9 +75,13 @@ function TestDropdown() {
               onChange={(e) => setText(e.target.value)}
               placeholder="탈퇴 사유를 입력해주세요."
               maxLength={100}
-              className="h-32 w-72 resize-none rounded-md border p-4 outline-none focus:border-[#707070]"
+              className={cn(
+                'text-gray-primary h-32 w-72 resize-none rounded-md border bg-gray-100 p-4 outline-none',
+                'border-gray-250 placeholder:text-gray-disabled',
+                'focus:border-gray-500'
+              )}
             />
-            <p className="text-right text-sm text-gray-400">
+            <p className="mt-1 text-right text-sm text-gray-400">
               {text.length}/100
             </p>
           </div>
@@ -84,4 +91,4 @@ function TestDropdown() {
   )
 }
 
-export default TestDropdown
+export default Dropdown
