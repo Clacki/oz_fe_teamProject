@@ -1,14 +1,14 @@
+import { getExamQuestions } from '@/api/exam'
 import AlertIcon from '@/assets/icons/quiz/alert-circle.png'
 import CloseIcon from '@/assets/icons/quiz/icon-x-gray.svg?react'
-import { useEffect, useState, useCallback } from 'react'
-import { useNavigate } from 'react-router'
-import { getExamQuestions } from '@/api/exam'
-import type { QuizData } from '@/types/quizpage-type/question'
 import QuizHeader from '@/components/layout/quiz/QuizHeader'
-import { QuestionItem } from '@/features/quiz'
 import Button from '@/components/ui/button'
+import { getMyPageTab, getQuizResultPage } from '@/constants/routesPaths'
+import { QuestionItem } from '@/features/quiz'
 import { useQuizTimer } from '@/hooks/useQuizTimer'
-import { ROUTES_PATHS } from '@/constants/routesPaths'
+import type { QuizData } from '@/types/quizpage-type/question'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 function QuizPage() {
   const [quizData, setQuizData] = useState<QuizData | null>(null)
@@ -16,26 +16,30 @@ function QuizPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const navigate = useNavigate()
+  const handleBack = () => {
+    navigate(getMyPageTab('exam'))
+  }
 
-  const handleSubmit = useCallback(async () => {
-    if (isSubmitting) {
-      return
+  // 페이지 첫 진입시 전체화면
+  useEffect(() => {
+    const enterFullscreen = async () => {
+      try {
+        if (!document.fullscreenElement) {
+          await document.documentElement.requestFullscreen()
+        }
+      } catch (error) {
+        console.error('전체화면 진입 실패', error)
+      }
     }
-    setIsSubmitting(true)
-    try {
-      // TODO: 저장된 풀이 데이터 제출 API 연결
-      navigate(ROUTES_PATHS.QUIZ_RESULT_PAGE)
-    } catch (error) {
-      console.error(error)
-      setIsSubmitting(false)
+    enterFullscreen()
+    return () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {})
+      }
     }
-  }, [isSubmitting, navigate])
+  }, [])
 
-  const { formattedTime } = useQuizTimer({
-    initialSeconds: 30 * 60,
-    onTimeEnd: handleSubmit,
-  })
-
+  // 시험 데이터 호출
   useEffect(() => {
     const fetchQuizData = async () => {
       try {
@@ -49,6 +53,25 @@ function QuizPage() {
     fetchQuizData()
   }, [])
 
+  // 시험 제출
+  const handleSubmit = useCallback(async () => {
+    if (isSubmitting) {
+      return
+    }
+    setIsSubmitting(true)
+    try {
+      navigate(getQuizResultPage(1))
+    } catch (error) {
+      console.error(error)
+      setIsSubmitting(false)
+    }
+  }, [isSubmitting, navigate])
+
+  const { formattedTime } = useQuizTimer({
+    initialSeconds: 30 * 60,
+    onTimeEnd: handleSubmit,
+  })
+
   if (!quizData) {
     return <div>로딩중...</div>
   }
@@ -61,7 +84,7 @@ function QuizPage() {
         title="TypeScript 쪽지시험"
         subText="집중해서 천천히, 끝까지 응시해 주세요. 응원할게요💪"
         timeText={`${formattedTime} 뒤에 끝나요`}
-        misconductCount={0}
+        onBack={handleBack}
       />
       {/* 경고창 */}
       <section className="px-90 pt-32">

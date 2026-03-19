@@ -1,10 +1,11 @@
 import Dropdown from '@/components/common/Dropdown'
 import Toast from '@/components/common/Toast'
-import ExamEmptyState from '@/components/exam/ExamEmptyState'
 import TestButton from '@/test/TestButton'
 import TestInput from '@/test/TestInput'
 import TestModal from '@/test/TestModal'
 import TestFindIdModal from '@/test/TestFindIdModal'
+import TestFindPasswordModal from '@/test/TestFindPasswordModal'
+import TestRecoverAccountModal from '@/test/TestRecoverAccountModal'
 
 function TestPage() {
   return (
@@ -16,9 +17,10 @@ function TestPage() {
       <TestInput />
       <TestModal />
       <TestFindIdModal />
-      <div className="flex min-h-90 items-center justify-center">
-        <ExamEmptyState />
-      </div>
+      <TestFindPasswordModal />
+      <TestRecoverAccountModal />
+
+      <div className="flex min-h-90 items-center justify-center"></div>
     </div>
   )
 }
