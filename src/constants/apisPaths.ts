@@ -14,16 +14,17 @@ export const APIS_PATHS = {
   PHONE_VERIFICATION_SEND: '/accounts/verification/send-sms',
   PHONE_VERIFICATION_VERIFY: '/accounts/verification/verify-sms',
   CHANGE_PHONE: '/accounts/change-phone',
-  PRESIGNED_URL: '/questions/presigned-url',
+  PRESIGNED_URL: '/accounts/me/profile-image/presigned-url',
   PROFILE_IMAGE: '/accounts/me/profile-image',
   CHECK_NICKNAME: '/accounts/check-nickname',
   LOGOUT: '/accounts/logout',
+  REFRESH_TOKEN: '/accounts/me/refresh',
 
+  FIND_EMAIL: '/accounts/find-email',
   GET_EXAM_DEPLOYMENTS: '/exams/deployments',
   GET_EXAM_RESULT: '/exams/submissions',
 }
 
-//exam 동적 경로처리
 export const EXAM_API_PATHS = {
   DEPLOYMENTS: '/exams/deployments',
   deploymentDetail: (deploymentId: number) =>

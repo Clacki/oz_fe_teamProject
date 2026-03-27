@@ -1,4 +1,3 @@
-import { useCheckExamCode } from '@/api/queries/exam/useCheckExamCode'
 import { useExamDeployments } from '@/api/queries/exam/useExamDeployments'
 import ExamEmptyState from '@/components/exam/ExamEmptyState'
 import ExamEntryCodeModal from '@/components/exam/ExamEntryCodeModal'
@@ -18,12 +17,28 @@ import type {
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
-type ExamItem = ExamDeploymentItem
+const getExamImageSrc = (item: ExamDeploymentItem | null) => {
+  if (!item) {
+    return ''
+  }
+  const subjectIcon =
+    EXAM_SUBJECT_ICON_MAP[
+      item.exam.subject.title as keyof typeof EXAM_SUBJECT_ICON_MAP
+    ]
+  return (
+    subjectIcon ??
+    item.exam.subject.thumbnail_img_url ??
+    item.exam.thumbnail_img_url ??
+    ''
+  )
+}
 
 export default function MyExamTab() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<ExamTabType>('all')
-  const [selectedExam, setSelectedExam] = useState<ExamItem | null>(null)
+  const [selectedExam, setSelectedExam] = useState<ExamDeploymentItem | null>(
+    null
+  )
   const [isEntryCodeModalOpen, setIsEntryCodeModalOpen] = useState(false)
   const { data, isPending, isError } = useExamDeployments()
   const examList = data?.results ?? []
@@ -35,11 +50,11 @@ export default function MyExamTab() {
     return item.exam_info.status === activeTab
   })
 
-  const handleExamActionClick = (item: ExamItem) => {
-    const status = item.exam_info.status as keyof typeof EXAM_STATUS_META
+  const handleExamActionClick = (item: ExamDeploymentItem) => {
+    const status = item.exam_info.status
     const isDone = status === 'done'
-    if (isDone) {
-      navigate(getQuizResultPage(item.id))
+    if (isDone && item.submission_id) {
+      navigate(getQuizResultPage(item.submission_id))
       return
     }
     setSelectedExam(item)
@@ -50,33 +65,16 @@ export default function MyExamTab() {
     setIsEntryCodeModalOpen(false)
     setSelectedExam(null)
   }
-  const { mutateAsync: checkCode } = useCheckExamCode()
-  const handleConfirmEntryCode = async (entryCode: string) => {
-    if (!selectedExam) {
-      return false
-    }
-    try {
-      await checkCode({
-        deploymentId: selectedExam.id,
-        entryCode,
-      })
-      navigate(getQuizPage(selectedExam.id))
-      return true
-    } catch {
-      return false
-    }
-  }
-  const selectedSubjectTitle = selectedExam?.exam.subject.title as
-    | keyof typeof EXAM_SUBJECT_ICON_MAP
-    | undefined
 
-  const modalImageSrc =
-    (selectedSubjectTitle
-      ? EXAM_SUBJECT_ICON_MAP[selectedSubjectTitle]
-      : undefined) ??
-    selectedExam?.exam.subject.thumbnail_img_url ??
-    selectedExam?.exam.thumbnail_img_url ??
-    ''
+  const handleSuccessEntryCode = () => {
+    if (!selectedExam) {
+      return
+    }
+    handleCloseEntryCodeModal()
+    navigate(getQuizPage(selectedExam.id))
+  }
+
+  const modalImageSrc = getExamImageSrc(selectedExam)
 
   if (isPending) {
     return <div>로딩 중...</div>
@@ -132,13 +130,7 @@ export default function MyExamTab() {
           ) : (
             <ul className="flex flex-col gap-4">
               {filteredExamList.map((item) => {
-                const subjectTitle = item.exam.subject
-                  .title as keyof typeof EXAM_SUBJECT_ICON_MAP
-                const subjectIcon =
-                  EXAM_SUBJECT_ICON_MAP[subjectTitle] ??
-                  item.exam.subject.thumbnail_img_url ??
-                  item.exam.thumbnail_img_url ??
-                  ''
+                const subjectIcon = getExamImageSrc(item)
                 const status = item.exam_info.status
                 const statusMeta = EXAM_STATUS_META[status]
                 const isDone = status === 'done'
@@ -204,9 +196,9 @@ export default function MyExamTab() {
           )}
         </div>
       </section>
-
       <ExamEntryCodeModal
         isOpen={isEntryCodeModalOpen}
+        deploymentId={selectedExam?.id ?? 0}
         examTitle={selectedExam?.exam.title ?? ''}
         questionCount={selectedExam?.question_count ?? 0}
         timeLimit={selectedExam?.duration_time ?? 20}
@@ -215,7 +207,7 @@ export default function MyExamTab() {
           selectedExam ? `${selectedExam.exam.subject.title} 과목 아이콘` : ''
         }
         onClose={handleCloseEntryCodeModal}
-        onConfirm={handleConfirmEntryCode}
+        onSuccess={handleSuccessEntryCode}
       />
     </>
   )
