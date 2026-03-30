@@ -24,9 +24,12 @@ export const APIS_PATHS = {
   SEND_EMAIL_VERIFICATION: '/accounts/verification/send-email',
   VERIFY_EMAIL_VERIFICATION: '/accounts/verification/verify-email',
 
+  ACCOUNTS_RESTORE: '/accounts/restore',
   FIND_EMAIL: '/accounts/find-email',
   GET_EXAM_DEPLOYMENTS: '/exams/deployments',
   GET_EXAM_RESULT: '/exams/submissions',
+
+  RESET_PASSWORD: 'accounts/find-password',
 }
 export const EXAM_API_PATHS = {
   DEPLOYMENTS: '/exams/deployments',

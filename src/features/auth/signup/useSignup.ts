@@ -1,21 +1,19 @@
-import { useState } from 'react'
-import type { AxiosError } from 'axios'
-import { useMutation } from '@tanstack/react-query'
-import { useNavigate } from 'react-router-dom'
 import { ROUTES_PATHS } from '@/constants/routesPaths'
+import { useMutation } from '@tanstack/react-query'
+import type { AxiosError } from 'axios'
+import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 
 import {
-  postSendEmailVerificationCode,
-  postVerifyEmailVerificationCode,
+  useSendEmailVerificationCode,
+  useVerifyEmailVerificationCode,
   postSignup,
+  useSendPhoneVerificationCode,
+  useVerifyPhoneVerificationCode,
 } from '@/api/signup'
 import type { SignupRequest } from '@/types/auth-type/signup'
 import { useCheckNickName } from '@/api/queries/useCheckNickName'
-import {
-  useSendPhoneVerificationCode,
-  useVerifyPhoneVerificationCode,
-} from '@/api/queries/usePhoneVerification'
 import { useCodeVerification } from '@/features/auth/shared/useCodeVerification'
 import type { CheckNicknameErrorResponse } from '@/types/checkNickName'
 import { getErrorMessage } from '@/utils/getErrorMessage'
@@ -99,12 +97,8 @@ export const useSignup = () => {
   const phoneVerification = useCodeVerification({ mode: 'phone' })
 
   const checkNicknameMutation = useCheckNickName()
-  const sendEmailCodeMutation = useMutation({
-    mutationFn: postSendEmailVerificationCode,
-  })
-  const verifyEmailCodeMutation = useMutation({
-    mutationFn: postVerifyEmailVerificationCode,
-  })
+  const sendEmailCodeMutation = useSendEmailVerificationCode()
+  const verifyEmailCodeMutation = useVerifyEmailVerificationCode()
   const sendPhoneCodeMutation = useSendPhoneVerificationCode()
   const verifyPhoneCodeMutation = useVerifyPhoneVerificationCode()
   const signupMutation = useMutation({
@@ -287,7 +281,6 @@ export const useSignup = () => {
       await sendEmailCodeMutation.mutateAsync({
         email: state.email.trim(),
       })
-
       setErrors((prev) => ({
         ...prev,
         email: '',

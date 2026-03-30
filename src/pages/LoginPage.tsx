@@ -1,9 +1,18 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import logoImg from '@/assets/images/logo.png'
+import { useFindEmail } from '@/api/queries/auth/useFindEmail'
 import { useLogin } from '@/api/queries/auth/useLogin'
 import { useGetMyInfo } from '@/api/queries/myInfo/useGetMyInfo'
+
+import { useResetPassword } from '@/api/queries/auth/useFindPassword'
+import {
+  useSendEmailVerificationCode,
+  useSendPhoneVerificationCode,
+  useVerifyEmailVerificationCode,
+  useVerifyPhoneVerificationCode,
+} from '@/api/signup'
+import logoImg from '@/assets/images/logo.png'
 import { ROUTES_PATHS } from '@/constants/routesPaths'
 import FindIdModal from '@/features/auth/find-id/FindIdModal'
 import FindPasswordModal from '@/features/auth/find-password/FindPasswordModal'
@@ -13,13 +22,13 @@ import RecoverAccountModal from '@/features/auth/recover-account/RecoverAccountM
 import type { FindIdHandlers } from '@/hooks/useFindId'
 import type { FindPasswordHandlers } from '@/hooks/useFindPassword'
 import { useAuthStore } from '@/store/authStore'
-import type { loginSuccessResponse } from '@/types/auth-type/login'
-import { useFindEmail } from '@/api/queries/auth/useFindEmail'
-import {
-  useSendPhoneVerificationCode,
-  useVerifyPhoneVerificationCode,
-} from '@/api/queries/usePhoneVerification'
 import { getErrorMessage } from '@/utils/getErrorMessage'
+import type {
+  loginErrorResponse,
+  loginSuccessResponse,
+} from '@/types/auth-type/login'
+import type { AxiosError } from 'axios'
+import { toast } from 'sonner'
 
 type SubmitLoginParams = {
   email: string
@@ -29,20 +38,6 @@ type SubmitLoginParams = {
 type Provider = 'kakao' | 'naver'
 
 type OpenModal = 'none' | 'recover' | 'findId' | 'findPassword'
-
-const findPasswordHandlers: FindPasswordHandlers = {
-  onSendCode: async () => {
-    throw new Error('등록된 이메일이 아닙니다.')
-  },
-
-  onVerifyCode: async () => {
-    throw new Error('인증번호가 일치하지 않습니다.')
-  },
-
-  onResetPassword: async () => {
-    // TODO: 비밀번호 재설정 API 연동
-  },
-}
 
 const LoginPage = () => {
   const [openModal, setOpenModal] = useState<OpenModal>('none')
@@ -55,13 +50,16 @@ const LoginPage = () => {
   const setUser = useAuthStore((state) => state.setUser)
 
   const findEmailMutation = useFindEmail()
-  const sendCodeMutation = useSendPhoneVerificationCode()
-  const verifyCodeMutation = useVerifyPhoneVerificationCode()
+  const sendPhoneCodeMutation = useSendPhoneVerificationCode()
+  const verifyPhoneCodeMutation = useVerifyPhoneVerificationCode()
+  const sendEmailCodeMutation = useSendEmailVerificationCode()
+  const verifyEmailCodeMutation = useVerifyEmailVerificationCode()
+  const resetPasswordMutation = useResetPassword()
 
   const findIdHandlers: FindIdHandlers = {
     onSendCode: async ({ phone }) => {
       try {
-        await sendCodeMutation.mutateAsync({
+        await sendPhoneCodeMutation.mutateAsync({
           phone_number: phone,
         })
       } catch (error) {
@@ -71,7 +69,7 @@ const LoginPage = () => {
 
     onVerifyCode: async ({ phone, code }) => {
       try {
-        await verifyCodeMutation.mutateAsync({
+        await verifyPhoneCodeMutation.mutateAsync({
           code,
           phone_number: phone,
         })
@@ -102,6 +100,42 @@ const LoginPage = () => {
     },
   }
 
+  const findPasswordHandlers: FindPasswordHandlers = {
+    onSendCode: async ({ email }) => {
+      try {
+        await sendEmailCodeMutation.mutateAsync({
+          email,
+        })
+      } catch (error) {
+        throw new Error(getErrorMessage(error, '인증번호 전송 실패'))
+      }
+    },
+
+    onVerifyCode: async ({ email, code }) => {
+      try {
+        const result = await verifyEmailCodeMutation.mutateAsync({
+          email,
+          code,
+        })
+
+        return result
+      } catch (error) {
+        throw new Error(getErrorMessage(error, '인증번호 확인 실패'))
+      }
+    },
+
+    onResetPassword: async ({ emailToken, newPassword }) => {
+      try {
+        await resetPasswordMutation.mutateAsync({
+          email_token: emailToken,
+          new_password: newPassword,
+        })
+      } catch (error) {
+        throw new Error(getErrorMessage(error, '비밀번호 재설정 실패'))
+      }
+    },
+  }
+
   const handleSocialLoginBtnClick = ({ provider }: { provider: Provider }) => {
     void provider
   }
@@ -118,7 +152,7 @@ const LoginPage = () => {
           const result = await refetch()
 
           if (result.data) {
-            const user = result.data as any
+            const user = result.data
 
             setUser({
               id: user.id,
@@ -126,7 +160,24 @@ const LoginPage = () => {
             })
           }
 
-          navigate('/')
+          navigate(ROUTES_PATHS.HOME_PAGE)
+        },
+        onError: (error) => {
+          const axiosError = error as AxiosError<loginErrorResponse>
+          const status = axiosError.response?.status
+
+          if (status === 403) {
+            setOpenModal('recover')
+            return
+          }
+
+          const message =
+            axiosError.response?.data?.detail ??
+            axiosError.response?.data?.error_detail ??
+            axiosError.response?.data?.errorDetail?.detail ??
+            '로그인에 실패했습니다.'
+
+          toast.error(message)
         },
       }
     )
